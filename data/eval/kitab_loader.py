@@ -1,12 +1,19 @@
-"""KITAB-Bench dataset loader.
+"""Arabic document eval dataset loader.
 
-HuggingFace dataset: mbzuai-oryx/KITAB-Bench
-Loads the OCR / page-recognition subset and wraps each row in an EvalSample.
+Supported suites
+----------------
+misraj-ocr
+    Misraj/Misraj-DocOCR — public Arabic doc images with markdown ground truth.
+    Use this for smoke tests and early baselines while KITAB-Bench is unavailable.
 
-If column names ever change upstream, run this one-liner to inspect the schema:
+kitab-ocr
+    mbzuai-oryx/KITAB-Bench — the north-star benchmark (ACL 2025).
+    Not yet publicly released on HF. Swap in when it lands.
+
+Schema probe (run if a dataset's columns ever change):
     python -c "
     from datasets import load_dataset
-    ds = load_dataset('mbzuai-oryx/KITAB-Bench', split='test', streaming=True, trust_remote_code=True)
+    ds = load_dataset('<hf_name>', split='train', streaming=True)
     print(list(next(iter(ds)).keys()))
     "
 """
@@ -24,18 +31,19 @@ TaskType = Literal["ocr", "pdf_to_md", "table", "chart", "unknown"]
 
 # Candidate column names — tried in order, first hit wins.
 _IMAGE_COLS = ["image", "img", "page_image"]
-_GT_COLS    = ["ground_truth", "text", "answer", "transcription", "ocr_text"]
+_GT_COLS    = ["ground_truth", "markdown", "text", "answer", "transcription", "ocr_text"]
 _TASK_COLS  = ["task_type", "task", "category", "type"]
-_ID_COLS    = ["id", "sample_id", "idx", "image_id", "file_name"]
+_ID_COLS    = ["uuid", "id", "sample_id", "idx", "image_id", "file_name"]
 
-# Maps our suite name → (HF dataset name, HF config name or None)
-_SUITE_MAP: dict[str, tuple[str, str | None]] = {
-    "kitab-ocr": ("mbzuai-oryx/KITAB-Bench", None),
+# Maps suite name → (HF dataset name, HF config or None, split)
+_SUITE_MAP: dict[str, tuple[str, str | None, str]] = {
+    "misraj-ocr":  ("Misraj/Misraj-DocOCR",         None, "train"),
+    "kitab-ocr":   ("mbzuai-oryx/KITAB-Bench",       None, "test"),   # not yet public
 }
 
 
 class EvalSample(BaseModel):
-    """One evaluation sample from KITAB-Bench."""
+    """One evaluation sample."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -45,38 +53,27 @@ class EvalSample(BaseModel):
     task_type: TaskType
 
 
-def load_kitab(suite: str = "kitab-ocr", limit: int | None = None) -> list[EvalSample]:
-    """Load KITAB-Bench samples for a given suite.
-
-    Always loads the published test split. Never pass a training split here —
-    eval contamination risk (the model may have seen those examples).
+def load_kitab(suite: str = "misraj-ocr", limit: int | None = None) -> list[EvalSample]:
+    """Load eval samples for a given suite.
 
     Parameters
     ----------
     suite:
-        Which sub-task to load. Supported: ``"kitab-ocr"``.
+        Dataset key. See module docstring for available suites.
     limit:
         Cap on returned samples. Use 5–10 for cheap smoke tests.
 
     Returns
     -------
     list[EvalSample]
-        Samples ready for the harness.
     """
     if suite not in _SUITE_MAP:
         raise ValueError(f"Unknown suite {suite!r}. Available: {list(_SUITE_MAP)}")
 
-    hf_name, hf_config = _SUITE_MAP[suite]
+    hf_name, hf_config, hf_split = _SUITE_MAP[suite]
 
-    # streaming=True means we never download more rows than we actually iterate,
-    # which is important when limit is small.
-    ds = load_dataset(
-        hf_name,
-        hf_config,
-        split="test",
-        streaming=True,
-        trust_remote_code=True,
-    )
+    # streaming=True: only downloads rows we actually iterate — critical for --limit 5.
+    ds = load_dataset(hf_name, hf_config, split=hf_split, streaming=True)
 
     samples: list[EvalSample] = []
     for i, row in enumerate(ds):
@@ -88,14 +85,14 @@ def load_kitab(suite: str = "kitab-ocr", limit: int | None = None) -> list[EvalS
                 id=str(_pick(row, _ID_COLS, i)),
                 image=_extract_image(row, i),
                 ground_truth=str(_pick(row, _GT_COLS, "")),
-                task_type=_normalize_task(str(_pick(row, _TASK_COLS, "ocr"))),
+                task_type=_normalize_task(str(_pick(row, _TASK_COLS, suite))),
             )
         )
 
     if not samples:
         raise RuntimeError(
-            f"No samples loaded from {hf_name!r}. "
-            "Check your HF token and network connection."
+            f"No samples loaded from {hf_name!r} (split={hf_split!r}). "
+            "Check your network connection and HF token."
         )
 
     return samples
@@ -114,16 +111,15 @@ def _extract_image(row: dict, idx: int) -> Image.Image:
     val = _pick(row, _IMAGE_COLS)
     if val is None:
         raise KeyError(
-            f"Sample {idx}: no image column found. "
-            f"Row has columns: {list(row.keys())}. "
+            f"Sample {idx}: no image column found in {list(row.keys())}. "
             f"Expected one of: {_IMAGE_COLS}. "
-            "Run the schema probe in the module docstring to inspect."
+            "Run the schema probe in the module docstring."
         )
     if isinstance(val, Image.Image):
         return val
     if isinstance(val, bytes):
         return Image.open(io.BytesIO(val))
-    # HF datasets sometimes wraps image bytes as {"bytes": b"...", "path": "..."}
+    # HF sometimes wraps image bytes as {"bytes": b"...", "path": "..."}
     if isinstance(val, dict) and "bytes" in val and val["bytes"]:
         return Image.open(io.BytesIO(val["bytes"]))
     raise TypeError(
@@ -135,7 +131,7 @@ def _normalize_task(raw: str) -> TaskType:
     raw = raw.lower()
     if any(k in raw for k in ("ocr", "page", "recog", "transcri")):
         return "ocr"
-    if any(k in raw for k in ("pdf", "markdown", " md")):
+    if any(k in raw for k in ("pdf", "markdown", "md", "misraj")):
         return "pdf_to_md"
     if "table" in raw:
         return "table"
