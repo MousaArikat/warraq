@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from data.eval.kitab_loader import load_kitab
+from data.eval.kitab_loader import KITAB_NORMALIZE_KWARGS, load_kitab
 from evals.metrics import compute_cer, compute_wer
 
 _RESULTS_DIR = Path(__file__).parent / "results"
@@ -51,23 +51,22 @@ def run_eval(model: str, suite: str, limit: int | None, model_variant: str | Non
     print(f"Runner : {runner.name}")
     print(f"Samples: {len(samples)}\n")
 
+    # Use KITAB paper normalization for kitab-* suites so numbers are comparable.
+    # For other suites fall back to our defaults.
+    norm_kwargs = KITAB_NORMALIZE_KWARGS if suite.startswith("kitab-") else {}
+
     per_sample = []
     for i, sample in enumerate(samples, 1):
         hyp = runner.run(sample.image)
 
-        # Normalized: strip tashkeel, normalize alef, digits → western (our defaults)
-        cer_norm = compute_cer(sample.ground_truth, hyp)
-        wer_norm = compute_wer(sample.ground_truth, hyp)
+        # Paper-comparable normalization (KITAB preset or our defaults)
+        cer_norm = compute_cer(sample.ground_truth, hyp, normalize_kwargs=norm_kwargs)
+        wer_norm = compute_wer(sample.ground_truth, hyp, normalize_kwargs=norm_kwargs)
 
-        # Strict: keep tashkeel — penalises models that drop diacritics
-        cer_strict = compute_cer(
-            sample.ground_truth, hyp,
-            normalize_kwargs={"strip_tashkeel": False},
-        )
-        wer_strict = compute_wer(
-            sample.ground_truth, hyp,
-            normalize_kwargs={"strip_tashkeel": False},
-        )
+        # Strict: keep tashkeel — shows the diacritic penalty separately
+        strict_kwargs = {**norm_kwargs, "strip_tashkeel": False}
+        cer_strict = compute_cer(sample.ground_truth, hyp, normalize_kwargs=strict_kwargs)
+        wer_strict = compute_wer(sample.ground_truth, hyp, normalize_kwargs=strict_kwargs)
 
         per_sample.append({
             "id": sample.id,
@@ -104,7 +103,7 @@ def run_eval(model: str, suite: str, limit: int | None, model_variant: str | Non
         "suite":       suite,
         "git_sha":     git_sha,
         "timestamp":   timestamp,
-        "config":      {"limit": limit},
+        "config":      {"limit": limit, "normalize_kwargs": norm_kwargs},
         "summary":     summary,
         "samples":     per_sample,
     }
