@@ -24,10 +24,10 @@ from evals.metrics import compute_cer, compute_wer
 _RESULTS_DIR = Path(__file__).parent / "results"
 
 # Registry: add new runners here as they're built.
-def _get_runner(model: str):
+def _get_runner(model: str, model_variant: str | None = None):
     if model == "gemini":
         from evals.baselines.gemini import GeminiRunner
-        return GeminiRunner()
+        return GeminiRunner(**({"model_name": model_variant} if model_variant else {}))
     raise SystemExit(f"Unknown model {model!r}. Available: gemini")
 
 
@@ -42,12 +42,12 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def run_eval(model: str, suite: str, limit: int | None) -> dict:
+def run_eval(model: str, suite: str, limit: int | None, model_variant: str | None = None) -> dict:
     print(f"Loading {suite!r}  (limit={limit}) …")
     samples = load_kitab(suite=suite, limit=limit)
     print(f"Loaded {len(samples)} samples.\n")
 
-    runner = _get_runner(model)
+    runner = _get_runner(model, model_variant)
     print(f"Runner : {runner.name}")
     print(f"Samples: {len(samples)}\n")
 
@@ -140,8 +140,11 @@ def main() -> None:
     parser.add_argument("--suite",  required=True, help="Eval suite, e.g. kitab-ocr")
     parser.add_argument("--limit",  type=int, default=None,
                         help="Max samples to run (omit for full suite)")
+    parser.add_argument("--model-variant", default=None,
+                        help="Override the runner's default model name, "
+                             "e.g. gemini-1.5-flash or gemini-2.0-flash-lite")
     args = parser.parse_args()
-    run_eval(args.model, args.suite, args.limit)
+    run_eval(args.model, args.suite, args.limit, args.model_variant)
 
 
 if __name__ == "__main__":
