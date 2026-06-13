@@ -86,6 +86,39 @@ class TestTatweel:
         assert normalize_arabic("مـرحـبـا", strip_tatweel=False) == "مـرحـبـا"
 
 
+# ── normalize_arabic: whitespace ─────────────────────────────────────────────
+
+class TestNormalizeWhitespace:
+    def test_off_by_default(self):
+        # Default must NOT touch whitespace — markdown ground truth has meaningful newlines
+        assert normalize_arabic("a  b\tc\nd", strip_tashkeel=False) == "a  b\tc\nd"
+
+    def test_collapses_multiple_spaces(self):
+        # "a  b" (2 spaces) → "a b" (1 space)
+        assert normalize_arabic("a  b", strip_tashkeel=False, normalize_whitespace=True) == "a b"
+
+    def test_collapses_tabs(self):
+        # tab → single space
+        assert normalize_arabic("a\tb", strip_tashkeel=False, normalize_whitespace=True) == "a b"
+
+    def test_collapses_newlines(self):
+        # newline → single space
+        assert normalize_arabic("a\nb", strip_tashkeel=False, normalize_whitespace=True) == "a b"
+
+    def test_collapses_mixed_whitespace(self):
+        # " \t\n " (space + tab + newline + space) all collapse to one space
+        assert normalize_arabic("a \t\n b", strip_tashkeel=False, normalize_whitespace=True) == "a b"
+
+    def test_strips_leading_trailing(self):
+        # Leading/trailing whitespace removed
+        assert normalize_arabic("  مرحبا  ", strip_tashkeel=False, normalize_whitespace=True) == "مرحبا"
+
+    def test_arabic_text_with_tabs(self):
+        # Real KITAB ground truth often has tab-separated columns — collapses cleanly
+        # "كتب\t\tمقالة" → "كتب مقالة"  (2 tabs → 1 space)
+        assert normalize_arabic("كتب\t\tمقالة", strip_tashkeel=False, normalize_whitespace=True) == "كتب مقالة"
+
+
 # ── normalize_arabic: digits ─────────────────────────────────────────────────
 
 class TestDigits:
