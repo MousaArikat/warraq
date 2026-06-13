@@ -1,7 +1,10 @@
 # Warraq (ورّاق) — Arabic Document Intelligence
 ### DESIGN.md — v0.1 (Source of Truth)
 
-> Codename "Warraq" (the medieval Arabic scribe/manuscript copyist).
+> Codename "Warraq" (the medieval Arabic scribe/manuscript copyist). Final name TBD.
+> ⚠️ Naming note: "Baseer" is taken (Misraj AI's commercial product, Dec 2025). Avoid it.
+> Candidate alternatives: Warraq (ورّاق), Raqeem (رقيم — "inscription"), Bayan (بيان).
+
 ---
 
 ## 1. Mission
@@ -132,7 +135,10 @@ No existing open project has all five.
 **Goal:** A measuring stick + baseline leaderboard before any training.
 
 ### 6.1 Eval datasets
-- **KITAB-Bench subsets** (HF: `mbzuai-oryx`): page OCR (image→text), PDF→Markdown,
+- **KITAB-Bench subsets** (HF: datasets are `ahmedheakl/arocrbench_*` — a 24-item
+  collection under user `ahmedheakl`, NOT `mbzuai-oryx` which only hosts the eval *code*
+  at github.com/mbzuai-oryx/KITAB-Bench. Use the GitHub repo's prompts + metric protocol
+  so our numbers are paper-comparable): page OCR (image→text), PDF→Markdown,
   tables, optionally charts. Use their published splits; do NOT train on eval splits.
 - **Warraq-Eval (ours, ~150–200 pages), built in Phase 1's generator + manual curation:**
   - 40 clean printed MSA pages (books/articles, multiple fonts)
@@ -171,6 +177,30 @@ No existing open project has all five.
 ### 6.5 Definition of Done
 Leaderboard table in README with ≥6 baselines across ≥3 suites. Blog-able on its own
 ("How good are frontier models at Arabic documents? I measured.").
+
+### 6.6 Rigor Rules — public-claim insurance (non-negotiable)
+Every published number must survive hostile review. These rules are CI-enforced or
+checklist-enforced before anything goes in the README:
+
+1. **No contamination.** Never train on benchmark eval splits. Warraq-Eval source
+   texts/pages hash-excluded from the synthetic generator. Exclusion mechanism documented.
+2. **No cherry-picking.** All suites reported, including the ones we lose. Wins and
+   losses in the same table.
+3. **Fair prompting.** Identical prompt per suite across all models (or documented
+   best-effort per model). Exact prompts committed to the repo.
+4. **Real sample sizes.** ≥200 samples per headline suite; N reported in every table.
+5. **Reproducible by strangers.** One command re-runs any number; pinned dependency
+   versions; configs + results JSON + git SHA committed.
+6. **Variance handled.** Final published API numbers = mean of 3 runs (temperature 0
+   where supported); variance noted.
+7. **No metric gaming.** Normalization flags documented; CER reported both with and
+   without diacritic stripping.
+8. **Test the tests.** Unit tests for every metric against hand-computed golden values;
+   bbox pipelines verified with visual overlay checks.
+9. **Auditability.** Raw model outputs cached/stored so metrics can be recomputed
+   without re-calling APIs.
+10. **Human spot-check.** ≥30 random samples manually reviewed per major run to confirm
+    metrics match perceived quality.
 
 ---
 
@@ -363,15 +393,23 @@ Slack built in; phases 3–4 can interleave. If Sentinel pauses, compress by ~1 
 
 ---
 
-## 13. Budget
+## 13. Budget — tiered (spend is back-loaded: Phases 0–1 ≈ $0; first GPU dollar due Phase 2, ~mid-Aug)
 
-| Item | Estimate |
-|---|---|
-| GPU rental (QLoRA experiments, 100–250 GPU-hrs) | $60–300 (or ≈$0 via Kaggle for pilots) |
-| Frontier APIs (baselines, QA gen, judge) | $50–150 (hard caps in code) |
-| Demo hosting (Modal/HF/RunPod serverless) | $0–10/month |
-| Domain | ~$12/yr |
-| **Total** | **≈ $150–500** (floor ≈ $100 with max free-tier usage) |
+| Tier | What it buys | Est. total (whole project) |
+|---|---|---|
+| **Floor** — free-tier maximalist | Kaggle 30 GPU-hrs/wk for all training (slower, lower-res); Gemini free tier for most baselines; ~$20–40 of GPT-4o/Claude baseline calls; Modal free credits + HF Spaces for demo | **$50–120** |
+| **Comfort** — recommended | Floor + ~100–150 paid GPU-hrs for iteration speed, higher-resolution runs, and 3× variance runs on final numbers (RunPod/Vast 4090 ≈ $0.3–0.5/hr, or Colab Pro+ for 1–2 months) | **$200–350** |
+| **Ceiling** | Heavy ablations, 7B variant, A100-class hours | **≤ $500** |
+
+Notes:
+- Prepaid hourly credits = hard budget cap (load $25, it cannot spend $26). Safer than subscriptions.
+- Colab Pro ($10/mo) is fine for pilots; Pro+ ($50/mo ≈ 35–40 A100-hrs) can cover a lean Phase 2,
+  but session disconnects + ephemeral disk add friction vs RunPod/Vast for long runs
+  (checkpoint-resume logic required either way).
+- API spend control: hard caps in code; Gemini free tier first; 3× variance runs only for
+  the final published table, single runs during development.
+- Tier decision deferred to Phase 2 start — choose after Phases 0–1 are done and momentum is real.
+- Domain ~$12/yr; demo hosting $0–10/mo regardless of tier.
 
 ---
 
@@ -442,6 +480,13 @@ warraq/
 - D4: BGE-M3 embeddings + qdrant; rerank bge-reranker-v2-m3. ✅
 - D5: Synthetic-first data with 10–20% real mix-in; no real personal data ever. ✅
 - D6: Codename Warraq; "Baseer" excluded (taken). ✅
+- D7: Public repo from day one; Apache 2.0 license (matches Qwen). ✅
+- D8: KITAB-Bench is the headline benchmark, loaded from `ahmedheakl/arocrbench_*`
+  (corrected path — `mbzuai-oryx/KITAB-Bench` is code-only, not data). ✅
+- D9: `Misraj/Misraj-DocOCR` used ONLY as a temporary pipeline bring-up dataset during
+  Phase 0 setup (datasets v5 dropped `trust_remote_code`; KITAB path was wrong at first).
+  ⚠️ It may be a TRAINING split → contamination risk → MUST NOT appear in any headline
+  leaderboard. Retire it from `--suite` once KITAB loaders are wired. ✅
 
 **Open:**
 - O1: Final name + domain.
