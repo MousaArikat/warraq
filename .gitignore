@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Warraq — API response cache (large, not for version control)
+evals/cache/
