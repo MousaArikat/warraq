@@ -12,6 +12,10 @@ when comparing systems known to disagree only on those characters.
 
 import re
 
+# ── Whitespace ─────────────────────────────────────────────────────────────────
+
+_MULTI_WHITESPACE_RE = re.compile(r"[ \t\n\r]+")
+
 # ── Unicode constants ──────────────────────────────────────────────────────────
 
 # Tashkeel: harakat + shadda + sukun + quranic annotation marks
@@ -56,6 +60,7 @@ def normalize_arabic(
     normalize_alef_maqsura: bool = False,
     strip_tatweel: bool = True,
     digits: str | None = "western",
+    normalize_whitespace: bool = False,
 ) -> str:
     """Normalize Arabic text for fairer OCR metric computation.
 
@@ -77,12 +82,18 @@ def normalize_arabic(
         ``"western"``       — convert Arabic-Indic digits (٠-٩) to Western (0-9).
         ``"arabic_indic"``  — convert Western digits (0-9) to Arabic-Indic (٠-٩).
         ``None``            — leave digits unchanged.
+    normalize_whitespace:
+        Collapse tabs, newlines, and runs of spaces into a single space, then
+        strip leading/trailing whitespace. Matches KITAB-Bench paper protocol.
+        Off by default (changes structure in markdown/table ground truth).
 
     Returns
     -------
     str
         Normalized text.
     """
+    if normalize_whitespace:
+        text = _MULTI_WHITESPACE_RE.sub(" ", text).strip()
     if strip_tashkeel:
         text = _TASHKEEL_RE.sub("", text)
     if strip_tatweel:
