@@ -28,11 +28,9 @@ load_dotenv()
 
 _CACHE_DIR = Path(__file__).parent.parent / "cache" / "gemini"
 
-_DEFAULT_PROMPT = (
-    "Read all the Arabic text in this image exactly as it appears. "
-    "Output only the transcribed text, preserving line breaks. "
-    "Do not translate, summarise, or add any commentary."
-)
+# Matches the prompt used in the KITAB-Bench eval.py exactly, so our numbers
+# are directly comparable to the paper's leaderboard.
+_DEFAULT_PROMPT = "Extract the text in the image. Give me the final text, nothing else."
 
 
 class GeminiRunner(BaselineRunner):
