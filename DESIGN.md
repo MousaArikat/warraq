@@ -500,6 +500,15 @@ warraq/
   inputs — the worst failure mode for legal/gov docs. Warraq's wedge is NOT higher clean-print
   accuracy; it's calibrated abstention + robustness on hard slices (handwriting, degraded,
   unusual layout). Abstention is the headline feature, validated by real data.
+- F4 (KEYSTONE RESULT): Gemini 2.5 Flash mean CER — clean print (hindawi) 0.044 vs
+  handwriting (khatt, n=25) 0.341. ~8x accuracy collapse; ~66% accuracy on handwriting
+  reproduces the KITAB-Bench paper's reported frontier ceiling on hard Arabic. This
+  clean-vs-handwriting contrast IS the project's motivating chart (README hero + report).
+  Failure mode on khatt = genuine misreading (wrong visually-similar words, mangled proper
+  nouns), distinct from hindawi's hallucination. cer_text_only == raw CER on every sample
+  → error is real reading failure, not formatting. NOTE id=21: normalized CER 0.145 vs
+  strict 0.80 — concrete proof the Arabic normalization layer is essential (model output
+  full tashkeel vs bare GT). Report median + distribution, not just mean.
 
 **Open:**
 - O1: Final name + domain.
