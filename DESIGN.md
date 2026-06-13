@@ -488,6 +488,19 @@ warraq/
   ⚠️ It may be a TRAINING split → contamination risk → MUST NOT appear in any headline
   leaderboard. Retire it from `--suite` once KITAB loaders are wired. ✅
 
+**Findings (empirical — from real baseline runs):**
+- F1 (Gemini 2.5 Flash, kitab-hindawi, n=100): mean CER 0.0438, WER 0.125, cer_text_only
+  0.0438 (== raw → Hindawi GT has no formatting noise). Clean printed Arabic is ~96%
+  solved by frontier models; beating frontier on clean print is NOT the opportunity.
+- F2: The mean is dominated by a few catastrophic outliers (CER 0.18–0.52) where the model
+  HALLUCINATED fluent-but-wrong Arabic rather than misreading characters. Failure cases
+  cluster on poetry, dialogue, and unusual layouts. → Report MEDIAN + distribution (e.g.
+  % pages above an error threshold), not just mean, on the real leaderboard. Mean misleads.
+- F3 (thesis confirmed): Frontier models fail by CONFIDENT SILENT HALLUCINATION on hard
+  inputs — the worst failure mode for legal/gov docs. Warraq's wedge is NOT higher clean-print
+  accuracy; it's calibrated abstention + robustness on hard slices (handwriting, degraded,
+  unusual layout). Abstention is the headline feature, validated by real data.
+
 **Open:**
 - O1: Final name + domain.
 - O2: Qwen3-VL vs Qwen2.5-VL at Phase 2 start (re-verify SOTA + vLLM + license).
