@@ -519,6 +519,13 @@ warraq/
   varies; one early call returned a policy refusal "I'm sorry, I can't assist with that").
   → Sharpens project framing: you cannot trust a general API on Arabic docs; need a
   specialized model + abstention. This is a stronger motivation than "weak on hard Arabic."
+  RULED OUT as cause: image resolution (pinned image_url detail="high", n=1 CER moved only
+  0.618→0.554 — not the issue) and image format (it reads the opening words correctly).
+  Confirmed failure pattern: GPT-4o transcribes the first words accurately, then DRIFTS into
+  fluent fabrication mid-passage — it stops grounding in the image and continues from its
+  language prior. Intrinsic behavior, not a harness artifact. Remaining untested variable =
+  prompt phrasing (a fixed, fair choice shared with Gemini; revisit only as a separate
+  experiment before any public claim).
   TODO: GPT-4o on khatt + historical to complete the 2-model × 3-suite leaderboard.
 
 **Open:**
