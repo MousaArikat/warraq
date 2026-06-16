@@ -17,6 +17,7 @@ dev = [
     "datasets>=2.0",
     "google-genai>=1.0",
     "jiwer>=3.0",
+    "openai>=1.0",
     "pillow>=10.0",
     "pydantic>=2.0",
     "pytest>=8.0",

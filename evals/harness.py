@@ -56,7 +56,10 @@ def _get_runner(model: str, model_variant: str | None = None):
     if model == "gemini":
         from evals.baselines.gemini import GeminiRunner
         return GeminiRunner(**({"model_name": model_variant} if model_variant else {}))
-    raise SystemExit(f"Unknown model {model!r}. Available: gemini")
+    if model == "gpt4o":
+        from evals.baselines.gpt4o import GPT4oRunner
+        return GPT4oRunner(**({"model_name": model_variant} if model_variant else {}))
+    raise SystemExit(f"Unknown model {model!r}. Available: gemini, gpt4o")
 
 
 def _git_sha() -> str:

@@ -50,11 +50,11 @@ TaskType = Literal["ocr", "pdf_to_md", "table", "chart", "unknown"]
 KITAB_NORMALIZE_KWARGS: dict = {
     "strip_tashkeel":       True,
     "normalize_alef":       True,
-    "normalize_ta_marbuta": True,   # ON — paper applies this
-    "normalize_alef_maqsura": True, # ON — paper applies this
+    "normalize_ta_marbuta": True,   
+    "normalize_alef_maqsura": True,
     "strip_tatweel":        True,
     "digits":               "western",
-    "normalize_whitespace": True,   # ON — paper collapses whitespace
+    "normalize_whitespace": True, 
 }
 
 # ── Suite registry ─────────────────────────────────────────────────────────────
