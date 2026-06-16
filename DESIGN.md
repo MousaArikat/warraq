@@ -526,6 +526,19 @@ warraq/
   language prior. Intrinsic behavior, not a harness artifact. Remaining untested variable =
   prompt phrasing (a fixed, fair choice shared with Gemini; revisit only as a separate
   experiment before any public claim).
+- F6 (COMPLETE PHASE 0 LEADERBOARD, CER, lower=better):
+    suite                | n  | Gemini 2.5 Flash | GPT-4o
+    hindawi (clean)      | 25 | 0.044            | 0.379
+    historical (degraded)| 10 | 0.118            | 0.576
+    khatt (handwriting)  | 25 | 0.341            | 0.546
+  Reads: (a) Gemini wins every tier and shows the EXPECTED difficulty gradient
+  (0.04→0.12→0.34) — a model genuinely reading and degrading gracefully. (b) GPT-4o is
+  bad AND has a near-FLAT gradient (0.38 clean vs 0.55 hard) — fingerprint of a model
+  generating plausible Arabic loosely anchored to the image rather than reading; failure
+  doesn't scale with difficulty because the failure is fabrication, not misreading.
+  (c) ~9x model spread on clean print. Phase 0 thesis fully supported: can't trust a
+  general API on Arabic docs; specialized model + calibrated abstention is the wedge.
+  Caveat: historical n=10 (suite is small); label n on all leaderboard cells.
   TODO: GPT-4o on khatt + historical to complete the 2-model × 3-suite leaderboard.
 
 **Open:**
