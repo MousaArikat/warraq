@@ -106,7 +106,10 @@ class GPT4oRunner(BaselineRunner):
                             "role": "user",
                             "content": [
                                 {"type": "text", "text": prompt},
-                                {"type": "image_url", "image_url": {"url": data_url}},
+                                # detail="high" forces full-resolution analysis (in 512px
+                                # tiles); default "auto" can downscale to low detail and
+                                # hurt OCR accuracy on small text.
+                                {"type": "image_url", "image_url": {"url": data_url, "detail": "high"}},
                             ],
                         }
                     ],
