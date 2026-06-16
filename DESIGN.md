@@ -509,6 +509,17 @@ warraq/
   → error is real reading failure, not formatting. NOTE id=21: normalized CER 0.145 vs
   strict 0.80 — concrete proof the Arabic normalization layer is essential (model output
   full tashkeel vs bare GT). Report median + distribution, not just mean.
+- F5 (cross-model, surprising): GPT-4o (gpt-4o-2024-08-06) mean CER on CLEAN print
+  (hindawi, n=25) = 0.391 — ~9x WORSE than Gemini 2.5 Flash (0.044) on the identical
+  suite. Two frontier models, same easy task, ~9x apart → frontier quality on Arabic is
+  wildly inconsistent. GPT-4o's failure mode = confident fluent fabrication (grammatical,
+  plausible Arabic that is substantially the wrong text) even on clean input, with
+  scattered total blowups (several samples CER ~0.99). It CAN read (best samples ~0.03),
+  but is unreliable. Note: GPT-4o sometimes hard-refuses OCR on book scans (finish_reason
+  varies; one early call returned a policy refusal "I'm sorry, I can't assist with that").
+  → Sharpens project framing: you cannot trust a general API on Arabic docs; need a
+  specialized model + abstention. This is a stronger motivation than "weak on hard Arabic."
+  TODO: GPT-4o on khatt + historical to complete the 2-model × 3-suite leaderboard.
 
 **Open:**
 - O1: Final name + domain.
